@@ -31,7 +31,6 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 class CustomUserViewSet(UserViewSet):
     pagination_class = CustomPageNumberPagination
-    # queryset = User.objects.all()
 
     def get_permissions(self):
         if self.action == 'retrieve':
