@@ -1,3 +1,4 @@
+from django.db.models import F, Q
 from django.contrib.auth import get_user_model
 from django.db import models
 
@@ -20,3 +21,16 @@ class Follow(models.Model):
         ordering = ['-id']
         verbose_name = 'Подписки'
         verbose_name_plural = 'Подписки'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'author'],
+                name='unique_user_author'
+            ),
+            models.CheckConstraint(
+                check=~Q(user=F('author')),
+                name='user_and_author_can_not_be_equal'
+            ),
+        ]
+
+    def __str__(self):
+        return f'{self.user} {self.author}'

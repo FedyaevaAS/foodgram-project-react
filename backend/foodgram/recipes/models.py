@@ -1,6 +1,15 @@
 from django.db import models
+from django.core.validators import BaseValidator
+from django.utils.deconstruct import deconstructible
 
 from users.models import User
+
+
+@deconstructible
+class GreaterZeroValidator(BaseValidator):
+
+    def compare(self, a, b):
+        return a <= b
 
 
 class Tag(models.Model):
@@ -61,7 +70,7 @@ class Recipe(models.Model):
     )
     ingredients = models.ManyToManyField(
         Ingredient,
-        verbose_name='Ингридиенты',
+        verbose_name='Ингредиенты',
         through='IngredientsAmount'
     )
     name = models.CharField(
@@ -76,7 +85,10 @@ class Recipe(models.Model):
         verbose_name='Описание'
     )
     cooking_time = models.PositiveSmallIntegerField(
-        verbose_name='Время приготовления'
+        verbose_name='Время приготовления',
+        validators=[GreaterZeroValidator(
+            0, 'Время приготовления должно быть больше 0'
+        )],
     )
 
     class Meta:
@@ -98,11 +110,14 @@ class IngredientsAmount(models.Model):
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
-        verbose_name='Ингридиент',
+        verbose_name='Ингредиент',
         related_name='ingredient'
     )
     amount = models.PositiveSmallIntegerField(
-        verbose_name='Количество'
+        verbose_name='Количество',
+        validators=[GreaterZeroValidator(
+            0, 'Количество ингредиентов должно быть больше 0'
+        )],
     )
 
     class Meta:
@@ -140,6 +155,15 @@ class FavoriteRecipe(models.Model):
     class Meta:
         verbose_name = 'Избранное'
         verbose_name_plural = 'Избранное'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_recipe_user'
+            )
+        ]
+
+    def __str__(self):
+        return f'{self.user} {self.recipe}'
 
 
 class ShoppingCart(models.Model):
@@ -157,3 +181,12 @@ class ShoppingCart(models.Model):
     class Meta:
         verbose_name = 'Список покупок'
         verbose_name_plural = 'Список покупок'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_recipe_user'
+            )
+        ]
+
+    def __str__(self):
+        return f'{self.user} {self.recipe}'

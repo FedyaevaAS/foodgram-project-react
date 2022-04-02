@@ -31,6 +31,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
 
 class CustomUserViewSet(UserViewSet):
     pagination_class = CustomPageNumberPagination
+    # queryset = User.objects.all()
 
     def get_permissions(self):
         if self.action == 'retrieve':
@@ -44,7 +45,7 @@ class CustomUserViewSet(UserViewSet):
     @action(permission_classes=(permissions.IsAuthenticated,), detail=False)
     def subscriptions(self, request, pk=None):
         user = self.request.user
-        queryset = Follow.objects.filter(user=user)
+        queryset = user.follower.all()
         page = self.paginate_queryset(queryset)
         if page is not None:
             serializer = FollowSerializer(page, many=True)
@@ -59,12 +60,9 @@ class CustomUserViewSet(UserViewSet):
     def subscribe(self, request, id):
         user = self.request.user
         author = get_object_or_404(User, id=id)
-        object_existence = Follow.objects.filter(
-            user=user,
-            author=author
-        ).exists()
+        object_existence = user.follower.filter(author=author).exists()
         if request.method == 'POST':
-            if object_existence or user.id == id:
+            if object_existence or user.id == int(id):
                 return Response({
                     'error': 'Вы уже подписаны или пытаетесь подписаться '
                              'на самого себя'
@@ -76,16 +74,14 @@ class CustomUserViewSet(UserViewSet):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         if not object_existence:
             return Response({
-                'error': 'Вы не были подписаны'
-                },
+                'error': 'Вы не были подписаны'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        Follow.objects.filter(user=user, author=author).delete()
+        user.follower.filter(author=author).delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
-    queryset = Recipe.objects.all()
     serializer_class = RecipeSerializer
     permission_classes = (permissions.IsAuthenticatedOrReadOnly,)
     filter_backends = (DjangoFilterBackend,)
@@ -96,13 +92,13 @@ class RecipeViewSet(viewsets.ModelViewSet):
         if user.is_authenticated:
             queryset = Recipe.objects.annotate(
                 is_favorited=Exists(
-                    FavoriteRecipe.objects.filter(
-                        user=user, recipe__pk=OuterRef('pk')
+                    user.author_of_favoritting.filter(
+                        recipe__pk=OuterRef('pk')
                     )
                 ),
                 is_in_shopping_cart=Exists(
-                    ShoppingCart.objects.filter(
-                        user=user, recipe__pk=OuterRef('pk')
+                    user.author_of_shopping_cart.filter(
+                        recipe__pk=OuterRef('pk')
                     )
                 ),
             )
@@ -140,8 +136,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         if not object_existence:
             return Response({
-                'error': delete_error
-                },
+                'error': delete_error},
                 status=status.HTTP_400_BAD_REQUEST
             )
         model.objects.filter(user=user, recipe=recipe).delete()
