@@ -1,15 +1,7 @@
 from django.db import models
-from django.core.validators import BaseValidator
-from django.utils.deconstruct import deconstructible
+from django.core.validators import MinValueValidator
 
 from users.models import User
-
-
-@deconstructible
-class GreaterZeroValidator(BaseValidator):
-
-    def compare(self, a, b):
-        return a <= b
 
 
 class Tag(models.Model):
@@ -86,9 +78,7 @@ class Recipe(models.Model):
     )
     cooking_time = models.PositiveSmallIntegerField(
         verbose_name='Время приготовления',
-        validators=[GreaterZeroValidator(
-            0, 'Время приготовления должно быть больше 0'
-        )],
+        validators=[MinValueValidator(1)],
     )
 
     class Meta:
@@ -115,9 +105,7 @@ class IngredientsAmount(models.Model):
     )
     amount = models.PositiveSmallIntegerField(
         verbose_name='Количество',
-        validators=[GreaterZeroValidator(
-            0, 'Количество ингредиентов должно быть больше 0'
-        )],
+        validators=[MinValueValidator(1)],
     )
 
     class Meta:

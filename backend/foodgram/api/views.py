@@ -101,7 +101,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
                     )
                 ),
             )
-            return queryset
         else:
             queryset = Recipe.objects.annotate(
                 is_favorited=Value(False, output_field=BooleanField()),

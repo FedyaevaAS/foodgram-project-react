@@ -83,26 +83,50 @@ class RecipeSerializer(serializers.ModelSerializer):
         )
 
     def write_ingredients_tags(self, recipe, ingredients, tags):
-        for ingredient in ingredients:
-            current_ingredient = Ingredient.objects.get(
-                id=ingredient.get('id')
+        try:
+            for ingredient in ingredients:
+                current_ingredient = Ingredient.objects.get(
+                    id=ingredient.get('id')
+                )
+                IngredientsAmount.objects.update_or_create(
+                    ingredient=current_ingredient,
+                    amount=ingredient.get('amount'),
+                    recipe=recipe
+                )
+        except TypeError:
+            raise serializers.ValidationError(
+                'Поле ingredients обязательно для заполнения'
             )
-            IngredientsAmount.objects.update_or_create(
-                ingredient=current_ingredient,
-                amount=ingredient.get('amount'),
-                recipe=recipe
-            )
-        if tags == 1:
+        if type(tags) == int:
             current_tag = Tag.objects.get(id=tags)
             RecipeTag.objects.update_or_create(tag=current_tag, recipe=recipe)
         else:
-            for tag in tags:
-                current_tag = Tag.objects.get(id=tag)
-                RecipeTag.objects.update_or_create(
-                    tag=current_tag,
-                    recipe=recipe
+            try:
+                for tag in tags:
+                    current_tag = Tag.objects.get(id=tag)
+                    RecipeTag.objects.update_or_create(
+                        tag=current_tag,
+                        recipe=recipe
+                    )
+            except TypeError:
+                raise serializers.ValidationError(
+                    'Поле tags обязательно для заполнения'
                 )
         return recipe
+
+    def validate(self, data):
+        ingredients = self.initial_data.get('ingredients')
+        tags = self.initial_data.get('tags')
+        values = {
+            'ingredients': ingredients,
+            'tags': tags
+        }
+        for kye, value in values.items():
+            if value == []:
+                raise serializers.ValidationError(
+                    f'Поле {kye} не может быть пустым'
+                )
+        return data
 
     def create(self, validated_data):
         ingredients = self.initial_data.get('ingredients')
