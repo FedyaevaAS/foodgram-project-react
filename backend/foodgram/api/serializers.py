@@ -113,6 +113,17 @@ class RecipeSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     f'Поле {kye} не может быть пустым'
                 )
+        for ingredient in ingredients:
+            id = ingredient.get('id')
+            if not Ingredient.objects.filter(id=id).exists():
+                raise serializers.ValidationError(
+                    f'Ингредиента c id {id} не существует'
+                )
+        for tag in tags:
+            if not Tag.objects.filter(id=tag).exists():
+                raise serializers.ValidationError(
+                    f'Тега c id {tag} не существует'
+                )
         return data
 
     def create(self, validated_data):
