@@ -49,19 +49,6 @@ class CustomUserCreateSerializer(UserCreateSerializer):
         )
 
 
-class RecipeCreateUpdateSerializer(serializers.ModelSerializer):
-    tags = GetTagSerializer(many=True)
-    ingredients = GetIngredientSerializer(many=True)
-    author = CustomUserSerializer()
-
-    class Meta:
-        model = Recipe
-        fields = (
-            'ingredients', 'tags', 'image', 'name',
-            'text', 'cooking_time', 'author'
-        )
-
-
 class RecipeSerializer(serializers.ModelSerializer):
     tags = GetTagSerializer(many=True, read_only=True)
     author = CustomUserSerializer(read_only=True)
