@@ -70,71 +70,77 @@ class RecipeSerializer(serializers.ModelSerializer):
         )
 
     def write_ingredients_tags(self, recipe, ingredients, tags):
-        try:
-            for ingredient in ingredients:
-                current_ingredient = Ingredient.objects.get(
-                    id=ingredient.get('id')
-                )
-                IngredientsAmount.objects.update_or_create(
-                    ingredient=current_ingredient,
-                    amount=ingredient.get('amount'),
-                    recipe=recipe
-                )
-        except TypeError:
-            raise serializers.ValidationError(
-                'Поле ingredients обязательно для заполнения'
+        for ingredient in ingredients:
+            current_ingredient = Ingredient.objects.get(
+                id=ingredient.get('id')
             )
-        if type(tags) == int:
+            IngredientsAmount.objects.update_or_create(
+                ingredient=current_ingredient,
+                amount=ingredient.get('amount'),
+                recipe=recipe
+            )
+        if isinstance(tags, int):
             current_tag = Tag.objects.get(id=tags)
             RecipeTag.objects.update_or_create(tag=current_tag, recipe=recipe)
         else:
-            try:
-                for tag in tags:
-                    current_tag = Tag.objects.get(id=tag)
-                    RecipeTag.objects.update_or_create(
-                        tag=current_tag,
-                        recipe=recipe
-                    )
-            except TypeError:
-                raise serializers.ValidationError(
-                    'Поле tags обязательно для заполнения'
+            for tag in tags:
+                current_tag = Tag.objects.get(id=tag)
+                RecipeTag.objects.update_or_create(
+                    tag=current_tag,
+                    recipe=recipe
                 )
         return recipe
 
-    def validate(self, data):
-        ingredients = self.initial_data.get('ingredients')
-        tags = self.initial_data.get('tags')
-        values = {
-            'ingredients': ingredients,
-            'tags': tags
-        }
-        for kye, value in values.items():
-            if value == []:
-                raise serializers.ValidationError(
-                    f'Поле {kye} не может быть пустым'
-                )
-        for ingredient in ingredients:
-            id = ingredient.get('id')
-            if not Ingredient.objects.filter(id=id).exists():
-                raise serializers.ValidationError(
-                    f'Ингредиента c id {id} не существует'
-                )
-        for tag in tags:
-            if not Tag.objects.filter(id=tag).exists():
-                raise serializers.ValidationError(
-                    f'Тега c id {tag} не существует'
-                )
-        return data
+    def validate_ingredients(self, ingredients):
+        if ingredients == []:
+            raise serializers.ValidationError(
+                'Поле ingredients не может быть пустым'
+            )
+        try:
+            for ingredient in ingredients:
+                id = ingredient.get('id')
+                if not Ingredient.objects.filter(id=id).exists():
+                    raise serializers.ValidationError(
+                        f'Ингредиента c id {id} не существует'
+                    )
+        except TypeError:
+            raise serializers.ValidationError(
+                'Поле tags обязательно для заполнения'
+            )
+        return ingredients
+
+    def validate_tags(self, tags):
+        if tags == []:
+            raise serializers.ValidationError(
+                'Поле tags не может быть пустым'
+            )
+        try:
+            for tag in tags:
+                if not Tag.objects.filter(id=tag).exists():
+                    raise serializers.ValidationError(
+                        f'Тега c id {tag} не существует'
+                    )
+        except TypeError:
+            raise serializers.ValidationError(
+                'Поле tags обязательно для заполнения'
+            )
+        return tags
 
     def create(self, validated_data):
         ingredients = self.initial_data.get('ingredients')
         tags = self.initial_data.get('tags')
+        self.validate_ingredients(ingredients)
+        self.validate_tags(tags)
         recipe = Recipe.objects.create(**validated_data)
         return self.write_ingredients_tags(recipe, ingredients, tags)
 
     def update(self, instance, validated_data):
+        instance.ingredients.clear()
+        instance.tags.clear()
         ingredients = self.initial_data.get('ingredients')
         tags = self.initial_data.get('tags')
+        self.validate_ingredients(ingredients)
+        self.validate_tags(tags)
         instance = self.write_ingredients_tags(instance, ingredients, tags)
         return super().update(instance, validated_data)
 

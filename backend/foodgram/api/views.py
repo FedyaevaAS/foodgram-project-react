@@ -192,7 +192,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             shopping_list.append(
                 f'{key} ({values["measurement_unit"]}) - {values["amount"]}'
             )
-        filename = 'shopping_list.txt'
+        filename = 'Список покупок.txt'
         response = HttpResponse(shopping_list, content_type='text/plain')
         response['Content-Disposition'] = f'attachment; filename={filename}'
         return response
