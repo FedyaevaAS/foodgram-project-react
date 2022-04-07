@@ -99,6 +99,11 @@ class RecipeSerializer(serializers.ModelSerializer):
         try:
             for ingredient in ingredients:
                 id = ingredient.get('id')
+                amount = ingredient.get('amount')
+                if int(amount) < 1:
+                    raise serializers.ValidationError(
+                        'Минимальное количество ингредиентов 1'
+                    )
                 if not Ingredient.objects.filter(id=id).exists():
                     raise serializers.ValidationError(
                         f'Ингредиента c id {id} не существует'
