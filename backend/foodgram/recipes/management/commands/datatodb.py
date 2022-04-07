@@ -16,7 +16,7 @@ class Command(BaseCommand):
         json_name = 'ingredients.json'
         location_json = os.path.join(
             BASE_DIR,
-            'static_backend/data/',
+            'data/',
             json_name
         )
         with open(location_json, encoding='utf-8') as json_file:
