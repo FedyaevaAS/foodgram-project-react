@@ -26,7 +26,7 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = GetIngredientSerializer
     filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
+    search_fields = ('^name',)
 
 
 class CustomUserViewSet(UserViewSet):
